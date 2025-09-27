@@ -1,27 +1,9 @@
 // main.dart
 // Resume Maker (Flutter) - Fixed Version
 // Place this file in lib/main.dart of a new Flutter project.
-//
-// Features:
-// - Fill personal details, multiple education & experience entries
-// - Add skills and certifications
-// - Live preview of a simple resume template
-// - Export resume to PDF using `pdf` and `printing` packages
-// - Fixed overflow issues and improved UI
-//
-// Dependencies (add to pubspec.yaml):
-//   flutter:
-//     sdk: flutter
-//   cupertino_icons: ^1.0.2
-//   pdf: ^3.10.1
-//   printing: ^5.10.0
-//
-// Usage:
-// 1. Add dependencies and run `flutter pub get`.
-// 2. Replace lib/main.dart with this file.
-// 3. Run: `flutter run`.
 
 import 'package:flutter/material.dart';
+import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
@@ -151,48 +133,106 @@ class _ResumeHomePageState extends State<ResumeHomePage> {
     final doc = pw.Document();
 
     doc.addPage(
-      pw.MultiPage(
-        build: (pw.Context ctx) => [
-          pw.Header(level: 0, child: pw.Text(data.fullName, style: pw.TextStyle(fontSize: 26, fontWeight: pw.FontWeight.bold))),
-          pw.Text(data.title, style: pw.TextStyle(fontSize: 14)),
-          pw.SizedBox(height: 8),
-          pw.Row(children: [
-            pw.Text('Email: ${data.email}   '),
-            pw.Text('Phone: ${data.phone}  '),
-            pw.Text('LinkedIn: ${data.linkedin}'),
-          ]),
-          pw.SizedBox(height: 12),
-          if (data.summary.isNotEmpty) pw.Column(children: [pw.Text('Professional Summary', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)), pw.SizedBox(height: 6), pw.Text(data.summary)]),
-          pw.SizedBox(height: 12),
-          if (data.experience.isNotEmpty)
-            pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-              pw.Text('Experience', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 6),
-              pw.Column(children: data.experience.map((e) {
-                return pw.Container(padding: pw.EdgeInsets.only(bottom: 6), child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-                  pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Text('${e.role} — ${e.company}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)), pw.Text('${e.start} - ${e.end}')]),
-                  if (e.description.isNotEmpty) pw.Text(e.description),
-                ]));
-              }).toList())
-            ]),
-          pw.SizedBox(height: 10),
-          if (data.education.isNotEmpty)
-            pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
-              pw.Text('Education', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-              pw.SizedBox(height: 6),
-              pw.Column(children: data.education.map((ed) {
-                return pw.Container(padding: pw.EdgeInsets.only(bottom: 6), child: pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [pw.Text(ed.degree, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)), pw.Text(ed.institute)]), pw.Text('${ed.startYear} - ${ed.endYear}')]));
-              }).toList())
-            ]),
-          pw.SizedBox(height: 10),
-          if (data.skills.isNotEmpty) pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [pw.Text('Skills', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)), pw.SizedBox(height: 6), pw.Wrap(spacing: 6, runSpacing: 6, children: data.skills.map((s) => pw.Container(padding: pw.EdgeInsets.all(6), decoration: pw.BoxDecoration(border: pw.Border.all()), child: pw.Text(s))).toList())]),
-          pw.SizedBox(height: 10),
-          if (data.certifications.isNotEmpty) pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [pw.Text('Certifications', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)), pw.SizedBox(height: 6), pw.Column(children: data.certifications.map((c) => pw.Bullet(text: c)).toList())]),
-        ],
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(data.fullName.isEmpty ? 'Your Name' : data.fullName, 
+                  style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 4),
+              pw.Text(data.title.isEmpty ? 'Professional Title' : data.title,
+                  style: pw.TextStyle(fontSize: 14)),
+              pw.SizedBox(height: 8),
+              pw.Row(children: [
+                pw.Text('Email: ${data.email.isEmpty ? 'email@example.com' : data.email}'),
+                pw.SizedBox(width: 10),
+                pw.Text('Phone: ${data.phone.isEmpty ? '+91-XXXXXXXXXX' : data.phone}'),
+              ]),
+              if (data.linkedin.isNotEmpty) pw.Text('LinkedIn: ${data.linkedin}'),
+              pw.SizedBox(height: 12),
+              
+              if (data.summary.isNotEmpty) ...[
+                pw.Text('Professional Summary', 
+                    style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 6),
+                pw.Text(data.summary),
+                pw.SizedBox(height: 12),
+              ],
+              
+              if (data.experience.isNotEmpty) ...[
+                pw.Text('Experience', 
+                    style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 6),
+                ...data.experience.map((e) => pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('${e.role.isEmpty ? 'Role' : e.role} — ${e.company.isEmpty ? 'Company' : e.company}', 
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text('${e.start.isEmpty ? 'Start' : e.start} - ${e.end.isEmpty ? 'End' : e.end}'),
+                      ],
+                    ),
+                    if (e.description.isNotEmpty) pw.Text(e.description),
+                    pw.SizedBox(height: 8),
+                  ],
+                )).toList(),
+              ],
+              
+              if (data.education.isNotEmpty) ...[
+                pw.Text('Education', 
+                    style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 6),
+                ...data.education.map((ed) => pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(ed.degree.isEmpty ? 'Degree' : ed.degree, 
+                            style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        pw.Text('${ed.startYear.isEmpty ? 'Start' : ed.startYear} - ${ed.endYear.isEmpty ? 'End' : ed.endYear}'),
+                      ],
+                    ),
+                    pw.Text(ed.institute.isEmpty ? 'Institute' : ed.institute),
+                    pw.SizedBox(height: 8),
+                  ],
+                )).toList(),
+              ],
+              
+              if (data.skills.isNotEmpty) ...[
+                pw.Text('Skills', 
+                    style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 6),
+                pw.Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: data.skills.map((s) => pw.Container(
+                    padding: pw.EdgeInsets.all(4),
+                    decoration: pw.BoxDecoration(border: pw.Border.all()),
+                    child: pw.Text(s),
+                  )).toList(),
+                ),
+                pw.SizedBox(height: 12),
+              ],
+              
+              if (data.certifications.isNotEmpty) ...[
+                pw.Text('Certifications', 
+                    style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 6),
+                ...data.certifications.map((c) => pw.Text('• $c')).toList(),
+              ],
+            ],
+          );
+        },
       ),
     );
 
-    await Printing.sharePdf(bytes: await doc.save(), filename: '${data.fullName}_Resume.pdf');
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => doc.save(),
+    );
   }
 
   Widget buildTextField({required String label, required String hint, required Function(String) onChanged, String? initial}) {
@@ -204,7 +244,7 @@ class _ResumeHomePageState extends State<ResumeHomePage> {
           labelText: label, 
           hintText: hint, 
           border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         ),
         onChanged: onChanged,
       ),
@@ -230,13 +270,13 @@ class _ResumeHomePageState extends State<ResumeHomePage> {
                   ),
               ],
             ),
-            buildTextField(label: 'Institute', hint: 'e.g. ABC University', initial: ed.institute, onChanged: (v) => ed.institute = v),
-            buildTextField(label: 'Degree', hint: 'e.g. B.Tech Computer Science', initial: ed.degree, onChanged: (v) => ed.degree = v),
+            buildTextField(label: 'Institute', hint: 'e.g. ABC University', initial: ed.institute, onChanged: (v) => setState(() => ed.institute = v)),
+            buildTextField(label: 'Degree', hint: 'e.g. B.Tech Computer Science', initial: ed.degree, onChanged: (v) => setState(() => ed.degree = v)),
             Row(
               children: [
-                Expanded(child: buildTextField(label: 'Start Year', hint: 'e.g. 2018', initial: ed.startYear, onChanged: (v) => ed.startYear = v)), 
+                Expanded(child: buildTextField(label: 'Start Year', hint: 'e.g. 2018', initial: ed.startYear, onChanged: (v) => setState(() => ed.startYear = v))), 
                 SizedBox(width: 8), 
-                Expanded(child: buildTextField(label: 'End Year', hint: 'e.g. 2022', initial: ed.endYear, onChanged: (v) => ed.endYear = v))
+                Expanded(child: buildTextField(label: 'End Year', hint: 'e.g. 2022', initial: ed.endYear, onChanged: (v) => setState(() => ed.endYear = v)))
               ],
             ),
           ],
@@ -264,13 +304,13 @@ class _ResumeHomePageState extends State<ResumeHomePage> {
                   ),
               ],
             ),
-            buildTextField(label: 'Company', hint: 'e.g. Acme Corp', initial: ex.company, onChanged: (v) => ex.company = v),
-            buildTextField(label: 'Role', hint: 'e.g. Software Engineer', initial: ex.role, onChanged: (v) => ex.role = v),
+            buildTextField(label: 'Company', hint: 'e.g. Acme Corp', initial: ex.company, onChanged: (v) => setState(() => ex.company = v)),
+            buildTextField(label: 'Role', hint: 'e.g. Software Engineer', initial: ex.role, onChanged: (v) => setState(() => ex.role = v)),
             Row(
               children: [
-                Expanded(child: buildTextField(label: 'Start', hint: 'e.g. Jun 2022', initial: ex.start, onChanged: (v) => ex.start = v)), 
+                Expanded(child: buildTextField(label: 'Start', hint: 'e.g. Jun 2022', initial: ex.start, onChanged: (v) => setState(() => ex.start = v))), 
                 SizedBox(width: 8), 
-                Expanded(child: buildTextField(label: 'End', hint: 'e.g. Present', initial: ex.end, onChanged: (v) => ex.end = v))
+                Expanded(child: buildTextField(label: 'End', hint: 'e.g. Present', initial: ex.end, onChanged: (v) => setState(() => ex.end = v)))
               ],
             ),
             Padding(
@@ -282,9 +322,9 @@ class _ResumeHomePageState extends State<ResumeHomePage> {
                   labelText: 'Description', 
                   hintText: 'Briefly describe responsibilities', 
                   border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 ),
-                onChanged: (v) => ex.description = v,
+                onChanged: (v) => setState(() => ex.description = v),
               ),
             ),
           ],
@@ -314,17 +354,16 @@ class _ResumeHomePageState extends State<ResumeHomePage> {
                   style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                 ),
                 SizedBox(height: 8),
-                Row(
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
                   children: [
-                    Expanded(child: Text(data.email.isEmpty ? 'email@example.com' : data.email)), 
-                    SizedBox(width: 12), 
-                    Expanded(child: Text(data.phone.isEmpty ? '+91-XXXXXXXXXX' : data.phone))
+                    Text(data.email.isEmpty ? 'email@example.com' : data.email),
+                    Text(data.phone.isEmpty ? '+91-XXXXXXXXXX' : data.phone),
+                    if (data.linkedin.isNotEmpty) 
+                      Text(data.linkedin, style: TextStyle(color: Colors.blue)),
                   ],
                 ),
-                if (data.linkedin.isNotEmpty) ...[
-                  SizedBox(height: 4),
-                  Text(data.linkedin, style: TextStyle(color: Colors.blue)),
-                ],
                 SizedBox(height: 12),
                 if (data.summary.isNotEmpty) ...[
                   Text('Summary', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -576,7 +615,7 @@ class _ResumeHomePageState extends State<ResumeHomePage> {
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                       hintText: 'Add a skill (e.g. Flutter, Python)',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     ),
                     onFieldSubmitted: (_) => addSkill(),
                   ),
@@ -613,7 +652,7 @@ class _ResumeHomePageState extends State<ResumeHomePage> {
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                       hintText: 'Add a certification',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     ),
                     onFieldSubmitted: (_) => addCertification(),
                   ),
@@ -641,27 +680,17 @@ class _ResumeHomePageState extends State<ResumeHomePage> {
             SizedBox(height: 24),
 
             // Action Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => setState(() {}),
-                  icon: Icon(Icons.refresh),
-                  label: Text('Refresh'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.shade100,
-                    foregroundColor: Colors.black87,
-                  ),
+            Center(
+              child: ElevatedButton.icon(
+                onPressed: exportPdf,
+                icon: Icon(Icons.file_download),
+                label: Text('Export PDF'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
-                ElevatedButton.icon(
-                  onPressed: exportPdf,
-                  icon: Icon(Icons.file_download),
-                  label: Text('Export PDF'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                  ),
-                ),
-              ],
+              ),
             ),
 
             SizedBox(height: 30),
