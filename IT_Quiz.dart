@@ -84,7 +84,7 @@ final List<Question> sampleQuestions = [
   Question(subject: 'Programming', text: 'Which function is the entry point of a Dart program?', options: ['init()', 'main()', 'start()', 'run()'], correctIndex: 1),
   Question(subject: 'Programming', text: 'Which collection type in Dart stores unique values?', options: ['List', 'Map', 'Set', 'Array'], correctIndex: 2),
   Question(subject: 'Programming', text: 'Which programming paradigm is Dart mainly?', options: ['Functional', 'Procedural', 'Object-Oriented', 'Logic'], correctIndex: 2),
-  Question(subject: 'Programming', text: 'Which symbol is used for string interpolation in Dart?', options: ['%', '#', r'$','&'], correctIndex: 2),
+  Question(subject: 'Programming', text: 'Which symbol is used for string interpolation in Dart?', options: ['%', '#', '\$', '&'], correctIndex: 2),
 ];
 
 class HomePage extends StatelessWidget {
@@ -110,7 +110,7 @@ class HomePage extends StatelessWidget {
           children: [
             Text(
               'Choose a subject',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
             SizedBox(height: 12),
             Expanded(
@@ -168,6 +168,7 @@ class _QuizPageState extends State<QuizPage> {
   void initState() {
     super.initState();
     questions = sampleQuestions.where((q) => q.subject == widget.subject).toList();
+    questions.shuffle(); // Shuffle questions for variety
   }
 
   void submitAnswer() {
@@ -225,8 +226,11 @@ class _QuizPageState extends State<QuizPage> {
 
               Color? tileColor;
               if (showAnswer) {
-                if (isCorrect) tileColor = Colors.green[100];
-                else if (isSelected && !isCorrect) tileColor = Colors.red[100];
+                if (isCorrect) {
+                  tileColor = Colors.green[100];
+                } else if (isSelected && !isCorrect) {
+                  tileColor = Colors.red[100];
+                }
               }
 
               return Card(
@@ -250,7 +254,7 @@ class _QuizPageState extends State<QuizPage> {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: showAnswer ? nextQuestion : submitAnswer,
+                    onPressed: selectedOptionIndex == null && !showAnswer ? null : (showAnswer ? nextQuestion : submitAnswer),
                     child: Text(showAnswer ? (currentIndex == questions.length - 1 ? 'Finish' : 'Next') : 'Submit'),
                   ),
                 ),
@@ -274,6 +278,10 @@ class ResultPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final percent = (score / total * 100).toStringAsFixed(0);
+    final performance = score == total ? 'Excellent! 🎉' 
+                        : score >= total * 0.7 ? 'Good job! 👍' 
+                        : score >= total * 0.5 ? 'Not bad! 😊' 
+                        : 'Keep practicing! 💪';
 
     return Scaffold(
       appBar: AppBar(
@@ -285,12 +293,16 @@ class ResultPage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Text('Quiz Completed!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              SizedBox(height: 20),
               Text('You scored', style: TextStyle(fontSize: 18)),
               SizedBox(height: 8),
               Text('$score / $total', style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
-              Text('$percent%'),
-              SizedBox(height: 20),
+              Text('$percent%', style: TextStyle(fontSize: 20)),
+              SizedBox(height: 16),
+              Text(performance, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => QuizPage(subject: subject)));
@@ -315,11 +327,6 @@ class ResultPage extends StatelessWidget {
 class AllSubjectsReviewPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final subjects = sampleQuestions
-        .map((q) => q.subject)
-        .toSet()
-        .toList();
-
     return Scaffold(
       appBar: AppBar(title: Text('All Questions')),
       body: ListView.builder(
@@ -328,10 +335,22 @@ class AllSubjectsReviewPage extends StatelessWidget {
         itemBuilder: (context, idx) {
           final q = sampleQuestions[idx];
           return Card(
+            margin: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
             child: ListTile(
-              title: Text(q.text),
-              subtitle: Text('Subject: ${q.subject}\nOptions: ${q.options.join(', ')}\nAnswer: ${q.options[q.correctIndex]}'),
-              isThreeLine: true,
+              title: Text(q.text, style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 4),
+                  Text('Subject: ${q.subject}'),
+                  SizedBox(height: 4),
+                  Text('Options: ${q.options.join(', ')}'),
+                  SizedBox(height: 4),
+                  Text('Correct Answer: ${q.options[q.correctIndex]}', 
+                       style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              isThreeLine: false,
             ),
           );
         },
@@ -339,18 +358,3 @@ class AllSubjectsReviewPage extends StatelessWidget {
     );
   }
 }
-
-/*
-How to use:
-1. Create a new Flutter project: `flutter create it_quiz`
-2. Replace lib/main.dart with this file.
-3. Run: `flutter run`
-
-Possible improvements you may want to add:
-- Load questions from JSON asset or remote API
-- Add timers per question
-- Store high scores with shared_preferences
-- Add animations and polish UI
-- Add images/media per question
-- Add admin UI to add/edit questions
-*/
